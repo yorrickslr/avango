@@ -35,6 +35,7 @@
 #include <avango/daemon/DeviceService.h>
 #include <avango/daemon/DTrack.h>
 #include <avango/daemon/KinectTrack.h>
+#include <avango/daemon/SkeletonTrack.h>
 #include <avango/daemon/HIDInput.h>
 #include <avango/daemon/WacomTablet.h>
 #include <avango/daemon/Wiimote.h>
@@ -64,6 +65,7 @@ av::daemon::Init::initClass()
     av::daemon::DeviceService::initClass();
     av::daemon::DTrack::initClass();
     av::daemon::KinectTrack::initClass();
+    av::daemon::SkeletonTrack::initClass();
     av::daemon::TUIOInput::initClass();
 
 

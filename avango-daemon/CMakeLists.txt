@@ -22,6 +22,7 @@ file(GLOB AVANGO_DAEMON_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     src/avango/daemon/DeviceService.cpp
     src/avango/daemon/DTrack.cpp
     src/avango/daemon/KinectTrack.cpp
+    src/avango/daemon/SkeletonTrack.cpp
     src/avango/daemon/Init.cpp
     src/avango/daemon/LinuxEvent.cpp
     src/avango/daemon/Station.cpp
@@ -53,6 +54,7 @@ file(GLOB AVANGO_DAEMON_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     include/avango/daemon/DeviceService.h
     include/avango/daemon/DTrack.h
     include/avango/daemon/KinectTrack.h
+    include/avango/daemon/SkeletonTrack.h
     include/avango/daemon/Doxygen.h
     include/avango/daemon/EventMapping.win.h
     include/avango/daemon/HIDInput.h
