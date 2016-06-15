@@ -79,7 +79,7 @@ av::daemon::SkeletonTrack::readLoop()
   std::cout << "SkeletonTrack::readLoop " << address << "\n";
 
   zmq::context_t ctx(1); // means single threaded
-  zmq::socket_t  socket(ctx, ZMQ_SUB); // means a publisher
+  zmq::socket_t  socket(ctx, ZMQ_SUB); // means a subscriber
   socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 #if ZMQ_VERSION_MAJOR < 3
   uint64_t hwm = 1;
