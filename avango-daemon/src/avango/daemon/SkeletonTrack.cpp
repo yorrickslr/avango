@@ -32,6 +32,7 @@
 #include <string>
 #include <iostream>
 #include <zmq.hpp>
+#include <array>
 
 namespace
 {
@@ -43,7 +44,7 @@ AV_BASE_DEFINE(av::daemon::SkeletonTrack);
 av::daemon::SkeletonTrack::SkeletonTrack()
   : Device()
   , mRequiredFeatures({ "port", "server" })
-  , mPort("7000")
+  , mPort("7700")
   , mServer("127.0.0.1")
 {}
 
@@ -94,11 +95,22 @@ av::daemon::SkeletonTrack::readLoop()
   // stations[0] |-> head
 
   while (mKeepRunning) {
-    zmq::message_t message(16*sizeof(float));
+    zmq::message_t message(25*sizeof(Message));
     socket.recv(&message);
-    ::gua::math::mat4f pose;
-    std::memcpy( &pose, reinterpret_cast<::gua::math::mat4f*>(message.data()), sizeof(::gua::math::mat4f));
-    mStations[0]->setMatrix(::gua::math::mat4(pose));
+    // ::gua::math::mat4f pose;
+    // std::memcpy( &pose, reinterpret_cast<::gua::math::mat4f*>(message.data()), sizeof(::gua::math::mat4f));
+    std::array<Message,25> skeleton;
+    std::memcpy( &skeleton, reinterpret_cast<std::array<Message,25>*>(message.data()),
+      sizeof(std::array<Message,25>));
+    // mStations[0]->setMatrix(::gua::math::mat4(pose));
+    // mStations[0]->setMatrix(::gua::math::mat4(skeleton[11].matrix));
+    for(int i = 0; i < 25; i++) {
+      mStations[i]->setMatrix(::gua::math::mat4(skeleton[i].matrix));
+      mStations[i]->setValue(0, skeleton[i].id);
+      mStations[i]->setButton(0, skeleton[i].status);
+    }
+    mStations[7]->setButton(1, skeleton[7].grab);
+    mStations[11]->setButton(1, skeleton[11].grab);
   }
 }
 

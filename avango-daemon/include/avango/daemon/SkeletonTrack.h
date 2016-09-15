@@ -43,6 +43,17 @@ namespace av
      *
      * \ingroup av_daemon
      */
+
+     struct Message {
+        Message()
+          :id{ -1 }
+        {}
+        short id;
+        ::gua::math::mat4f matrix;
+        bool status;
+        bool grab;
+     };
+
     class AV_DAEMON_DLL SkeletonTrack : public Device
     {
       AV_BASE_DECLARE();
