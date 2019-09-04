@@ -31,6 +31,15 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 ################################################################
 set(GLOBAL_EXT_DIR ${AVANGO_SOURCE_DIR}/externals)
 
+if(MSVC)
+    option(CONTAINER_DEPLOYMENT_BUILD "Set to enable Docker-based deployment behaviors" ON)
+endif()
+
+if(CONTAINER_DEPLOYMENT_BUILD)
+    set(GLOBAL_EXT_DIR ${DEPLOYMENT_EXTERNALS})
+endif(CONTAINER_DEPLOYMENT_BUILD)
+
+
 if (UNIX)
   pkg_check_modules(GL REQUIRED gl)
 endif (UNIX)
@@ -48,7 +57,7 @@ set(GUACAMOLE_EXT_DIR ${GUACAMOLE_INCLUDE_DIRS}/../externals)
 
 if (UNIX)
   pkg_check_modules(JSON REQUIRED jsoncpp)
-  pkg_check_modules(PYTHON3 REQUIRED python-3.4)
+  pkg_check_modules(PYTHON3 REQUIRED python-3.5)
 elseif (WIN32)
   include(findAssimp)
   include(findJson)
@@ -56,86 +65,80 @@ elseif (WIN32)
 endif (UNIX)
 
 if (UNIX)
-  set (BOOST_ROOT "/opt/boost/latest" CACHE PATH "Set to your boost install")
+  set (BOOST_ROOT "/opt/boost/current" CACHE PATH "Set to your boost install")
+  find_package(Boost COMPONENTS python-py35 thread signals system REQUIRED)
+  set(Boost_PYTHON3_LIBRARY_RELEASE ${Boost_PYTHON-PY35_LIBRARY_RELEASE} CACHE FILEPATH "")
+  set(Boost_PYTHON3_LIBRARY_DEBUG ${Boost_PYTHON-PY35_LIBRARY_DEBUG} CACHE FILEPATH "")
 elseif (MSVC)
   set (BOOST_ROOT ${GLOBAL_EXT_DIR}/boost CACHE PATH "Set to your boost install")
-  message(STATUS "Set BOOST_ROOT to ${BOOST_ROOT}") 
+  message(STATUS "Set BOOST_ROOT to ${BOOST_ROOT}")
   set (Boost_USE_MULTITHREADED ON)
   #set (Boost_USE_STATIC_LIBS ON)
   ADD_DEFINITIONS("-DBOOST_ALL_NO_LIB")
-  find_package(Boost COMPONENTS python python3 REQUIRED)
+  find_package(Boost COMPONENTS python3 thread signals system REQUIRED)
 endif(UNIX)
 
-find_package(Boost COMPONENTS
-  python3
-  thread
-  signals
-  system
-  REQUIRED
-)
-
-set (BULLET_ROOT 
+set (BULLET_ROOT
      /opt/bullet/default
      ${GLOBAL_EXT_DIR}/bullet
      CACHE PATH
     "Set to your bullet install path.")
 find_package(Bullet)
 
+ if (UNIX)
+                if (BULLET_COLLISION_LIBRARY)
+                  unset(BULLET_COLLISION_LIBRARY_DEBUG CACHE)
+                  set(BULLET_COLLISION_LIBRARY_DEBUG ${BULLET_COLLISION_LIBRARY} CACHE FILEPATH "")
+                endif (BULLET_COLLISION_LIBRARY)
+
+                if (BULLET_HACD_LIBRARY)
+                  unset(BULLET_HACD_LIBRARY_DEBUG CACHE) 
+                  set(BULLET_HACD_LIBRARY_DEBUG ${BULLET_HACD_LIBRARY} CACHE FILEPATH "")
+                endif (BULLET_HACD_LIBRARY)
+
+                if (BULLET_DYNAMICS_LIBRARY)
+                  unset(BULLET_DYNAMICS_LIBRARY_DEBUG CACHE) 
+                  set(BULLET_DYNAMICS_LIBRARY_DEBUG ${BULLET_DYNAMICS_LIBRARY} CACHE FILEPATH "")
+                endif (BULLET_DYNAMICS_LIBRARY)
+
+                if (BULLET_MATH_LIBRARY)
+                  unset(BULLET_MATH_LIBRARY_DEBUG CACHE) 
+                  set(BULLET_MATH_LIBRARY_DEBUG ${BULLET_MATH_LIBRARY} CACHE FILEPATH "")
+                endif (BULLET_MATH_LIBRARY)
+
+                if (BULLET_SOFTBODY_LIBRARY)
+                  unset(BULLET_SOFTBODY_LIBRARY_DEBUG CACHE) 
+                  set(BULLET_SOFTBODY_LIBRARY_DEBUG ${BULLET_SOFTBODY_LIBRARY} CACHE FILEPATH "")
+                endif (BULLET_SOFTBODY_LIBRARY)
+        endif(UNIX)
+
 include(FindSchism)
 
 include(FindZMQ)
+
+if (AVANGO_SPOINTS_SUPPORT)
+include(FindTurboJPEG)
+endif (AVANGO_SPOINTS_SUPPORT)
 
 if (${AVANGO_OCULUS_RIFT_SUPPORT})
   include(findOVR)
 endif(${AVANGO_OCULUS_RIFT_SUPPORT})
 
-set(LIBRARIES
-    ${GUACAMOLE_LIBRARIES}
-    ${GUACAMOLE_GUI_LIBRARIES}
-    ${GUACAMOLE_VOLUME_LIBRARIES}
-    ${GUACAMOLE_PLOD_LIBRARIES}
-    ${GL_LIBRARIES}
-    ${SCHISM_LIBRARIES}
-)
+if (${AVANGO_VIVE_SUPPORT})
+  include(FindOpenVR)
+endif(${AVANGO_VIVE_SUPPORT})
 
 set(LIB_PATHS
-  ${Boost_LIBRARY_DIRS}
-    ${GUACAMOLE_LIBRARY_DIRS}
-    ${GL_LIBRARY_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib
+  ${GUACAMOLE_LIBRARY_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib
+  ${GL_LIBRARY_DIRS}
 )
-
-set(INCLUDE_PATHS
-    ${CMAKE_CURRENT_SOURCE_DIR}/build
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${Boost_INCLUDE_DIRS}
-    ${GUACAMOLE_INCLUDE_DIRS}
-    ${GUACAMOLE_GUI_INCLUDE_DIRS}
-    ${GUACAMOLE_VOLUME_INCLUDE_DIRS}
-    ${GUACAMOLE_PLOD_INCLUDE_DIRS}
-    ${GL_INCLUDE_DIRS}
-)
-
-if (AVANGO_DISTRIBUTION_SUPPORT)
-    list(APPEND LIB_PATHS ${ZMQ_LIBRARY_DIRS})
-    list(APPEND INCLUDE_PATHS ${ZMQ_INCLUDE_DIRS})
-endif (AVANGO_DISTRIBUTION_SUPPORT)
-
-if (AVANGO_OCULUS_RIFT_SUPPORT)
-  list(APPEND LIB_PATHS ${OVR_LIBRARY_DIRS})
-  list(APPEND INCLUDE_PATHS ${OVR_INCLUDE_DIRS})
-endif(AVANGO_OCULUS_RIFT_SUPPORT)
-
-include_directories(ALL
-                    ${INCLUDE_PATHS}
-)
+# allow linking with local libraries
+link_directories(${LIB_PATHS})
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
-
-
-
 ################################################################
 # preprocessor configuration
 ################################################################
@@ -143,8 +146,8 @@ if (UNIX)
     set(CMAKE_CXX_FLAGS_RELEASE "-s -O4 --std=c++11")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall --std=c++11")
 elseif(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "-D NDEBUG -D _SECURE_SCL=0 -D _SCL_SECURE_NO_WARNINGS -D _CRT_SECURE_NO_DEPRECATE /MD /MP")
-    set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG /MDd /Zi")
+    set(CMAKE_CXX_FLAGS_RELEASE "-D NDEBUG -D WIN32_LEAN_AND_MEAN -D _SECURE_SCL=0 -D _SCL_SECURE_NO_WARNINGS -D _CRT_SECURE_NO_DEPRECATE /MD /MP")
+    set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -D WIN32_LEAN_AND_MEAN /MDd /Zi")
     add_definitions(-D AV_INSTANTIATE_FIELD_TEMPLATES -D NOMINMAX)
 endif(UNIX)
 
@@ -159,17 +162,24 @@ set (AVANGO_INSTALL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib CACHE PATH
 option (AVANGO_DEBUG "Set to enable avango debugging.")
 option (AVANGO_DISTRIBUTION_SUPPORT "Set to enable distribution support." ON)
 option (AVANGO_PBR_SUPPORT "Set to enable point based rendering support.")
+option (AVANGO_LOD_SUPPORT "Set to enable level of detail support.")
+option (AVANGO_NURBS_SUPPORT "Set to enable direct NURBS rendering." OFF)
+option (AVANGO_NRP_SUPPORT "Set to enable interface for the Neurorobotics Platform." OFF)
 option (AVANGO_PCL_SUPPORT "Use PCL.")
 option (AVANGO_UNITTESTS "Compile Unittests for Avango.")
 option (AVANGO_OCULUS_RIFT_SUPPORT "Compile Oculus Rift module for Avango.")
+option (AVANGO_VIVE_SUPPORT "Compile Vive module for Avango.")
 option (AVANGO_VOLUME_SUPPORT "Compile Volume module for Avango.")
 option (AVANGO_SKELANIM_SUPPORT "Compile Skeletal animation module for Avango.")
+option (AVANGO_SPOINTS_SUPPORT "Compile SPoints module.")
 option (AVANGO_OPENAL_SUPPORT "Enable building OpenAL sound module.")
 option (AVANGO_AWESOMIUM_SUPPORT "Enable building Awesomium module.")
 option (AVANGO_DISPLAY_SUPPORT "Enable building display setup module.")
 option (AVANGO_PHYSICS_SUPPORT "Set to enable physics support.")
 option (AVANGO_RUNTIME_PROGRAM_COMPILATION "Set to enable runtime program compilation." ON)
+option (AVANGO_TV_3_SUPPORT "Compile time-varying volume rendering support.")
 option (AVANGO_VIDEO3D_SUPPORT "Compile Video3d module.")
+option (AVANGO_VIRTUAL_TEXTURING_SUPPORT "Set to enable virtual texturing support (requires lamure-vt and guacamole-vt)." OFF)
 
 IF (AVANGO_RUNTIME_PROGRAM_COMPILATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGUACAMOLE_RUNTIME_PROGRAM_COMPILATION")
@@ -179,7 +189,7 @@ ENDIF (AVANGO_RUNTIME_PROGRAM_COMPILATION)
 # Create libraries
 ################################################################
 file(MAKE_DIRECTORY ${AVANGO_INSTALL_DIRECTORY})
-file(MAKE_DIRECTORY ${AVANGO_INSTALL_DIRECTORY}/python3.4)
+file(MAKE_DIRECTORY ${AVANGO_INSTALL_DIRECTORY}/python3.5)
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -196,9 +206,17 @@ if (AVANGO_OCULUS_RIFT_SUPPORT)
     add_subdirectory(avango-oculus)
 endif(AVANGO_OCULUS_RIFT_SUPPORT)
 
+if (AVANGO_VIVE_SUPPORT)
+    add_subdirectory(avango-vive)
+endif(AVANGO_VIVE_SUPPORT)
+
 if (AVANGO_SKELANIM_SUPPORT)
     add_subdirectory(avango-skelanim)
 endif(AVANGO_SKELANIM_SUPPORT)
+
+if (AVANGO_LOD_SUPPORT)
+  add_subdirectory(avango-lod)
+endif(AVANGO_LOD_SUPPORT)
 
 if (AVANGO_OPENAL_SUPPORT)
     add_subdirectory(avango-openal)
@@ -208,9 +226,21 @@ if (AVANGO_AWESOMIUM_SUPPORT)
     add_subdirectory(avango-awesomium)
 endif(AVANGO_AWESOMIUM_SUPPORT)
 
+if (AVANGO_TV_3_SUPPORT)
+  add_subdirectory(avango-tv_3)
+endif(AVANGO_TV_3_SUPPORT)
+
 if (AVANGO_VOLUME_SUPPORT)
     add_subdirectory(avango-volume)
 endif(AVANGO_VOLUME_SUPPORT)
+
+if (AVANGO_NURBS_SUPPORT)
+  add_subdirectory(avango-nurbs)
+endif (AVANGO_NURBS_SUPPORT)
+
+if (AVANGO_NRP_SUPPORT)
+  add_subdirectory(avango-nrp)
+endif (AVANGO_NRP_SUPPORT)
 
 ################################################################
 # Summary
@@ -239,6 +269,14 @@ if ( AVANGO_OCULUS_RIFT_SUPPORT  )
   message(STATUS "" )
 endif ( AVANGO_OCULUS_RIFT_SUPPORT )
 
+if ( AVANGO_VIVE_SUPPORT  )
+  message(STATUS " guacamole-vive:" )
+  message(STATUS "   library: ${GUACAMOLE_VIVE_LIBRARIES}" )
+  message(STATUS "   library path: ${GUACAMOLE_VIVE_LIBRARY_DIRS}" )
+  message(STATUS "   include: ${GUACAMOLE_VIVE_INCLUDE_DIRS}" )
+  message(STATUS "" )
+endif ( AVANGO_VIVE_SUPPORT )
+
 if ( AVANGO_VOLUME_SUPPORT  )
   message(STATUS " guacamole-volume:" )
   message(STATUS "   library: ${GUACAMOLE_VOLUME_LIBRARIES}" )
@@ -256,7 +294,7 @@ if ( AVANGO_AWESOMIUM_SUPPORT  )
 endif ( AVANGO_AWESOMIUM_SUPPORT )
 
 if ( AVANGO_SKELANIM_SUPPORT  )
-  message(STATUS " guacamole-oculus:" )
+  message(STATUS " guacamole-skelanim:" )
   message(STATUS "   library: ${GUACAMOLE_SKELANIM_LIBRARIES}" )
   message(STATUS "   library path: ${GUACAMOLE_SKELANIM_LIBRARY_DIRS}" )
   message(STATUS "   include: ${GUACAMOLE_SKELANIM_INCLUDE_DIRS}" )

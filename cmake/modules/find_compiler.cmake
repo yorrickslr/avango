@@ -30,9 +30,14 @@ if (WIN32)
     endif(MSVC12)
 
     if (MSVC14)
-        set (COMPILER_SUFFIX "vc140")
-        set (COMPILER_SUFFIX_VERSION "140")
+        set (COMPILER_SUFFIX "vc141")
+        set (COMPILER_SUFFIX_VERSION "141")
     endif(MSVC14)
+
+    if (MSVC15)
+        set (COMPILER_SUFFIX "vc141")
+        set (COMPILER_SUFFIX_VERSION "141")
+    endif(MSVC15)
 endif (WIN32)
 
 if (UNIX)
@@ -42,12 +47,9 @@ if (UNIX)
                      ARGS --version
                      OUTPUT_VARIABLE _COMPILER_VERSION
         )
-        message(${_COMPILER_VERSION})
         string(REGEX REPLACE ".* ([0-9])\\.([0-9])\\.[0-9].*" "\\1\\2" _COMPILER_VERSION ${_COMPILER_VERSION})
-        message(${_COMPILER_VERSION})
         set (COMPILER_SUFFIX "gcc${_COMPILER_VERSION}")
         #set (COMPILER_SUFFIX "")
-        message(${COMPILER_SUFFIX})
     endif (CMAKE_COMPILER_IS_GNUCXX)
 endif(UNIX)
 
