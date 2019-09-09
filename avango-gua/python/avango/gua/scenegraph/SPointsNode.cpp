@@ -55,6 +55,8 @@ float get_stats_request_reply_latency(av::gua::SPointsNode const& node) { return
 
 int get_stats_total_message_payload_in_byte(av::gua::SPointsNode const& node) { return node.getStatTotaMessagePayloadInByteReceived(); }
 
+int get_sync_length(av::gua::SPointsNode const& node) { return node.getStatTotaMessagePayloadInByteReceived(); }
+
 void init_SPointsNode()
 {
     register_field<av::gua::SFSPointsNode>("SFSPointsNode");

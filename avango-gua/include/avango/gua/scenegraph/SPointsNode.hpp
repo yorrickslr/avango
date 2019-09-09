@@ -66,6 +66,7 @@ class AV_GUA_DLL SPointsNode : public av::gua::GeometryNode
     SFMaterial Material;
     SFBool RenderToGBuffer;
     SFBool RenderToStencilBuffer;
+    SFInt SyncLength;
 
     SPointsStats LatestSPointsStats;
 
@@ -80,6 +81,9 @@ class AV_GUA_DLL SPointsNode : public av::gua::GeometryNode
 
     virtual void getRenderToStencilBufferCB(const SFBool::GetValueEvent& event);
     virtual void setRenderToStencilBufferCB(const SFBool::SetValueEvent& event);
+
+    virtual void getSyncLengthCB(const SFInt::GetValueEvent& event);
+    virtual void setSyncLengthCB(const SFInt::SetValueEvent& event);
 
     /**
      * Get the wrapped ::gua::SPointsNode.

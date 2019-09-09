@@ -22,6 +22,7 @@ def start(filename):
 
     spointsloader = avango.gua.nodes.SPointsLoader()
     spoints_geode = spointsloader.load("kinect", filename)
+    spoints_geode.SyncLength.value = 42
 
     transform1 = avango.gua.nodes.TransformNode(Name = "kinect_transform", Children=[spoints_geode])
 

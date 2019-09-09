@@ -19,6 +19,8 @@ av::gua::SPointsNode::SPointsNode(std::shared_ptr<::gua::node::SPointsNode> guan
     AV_FC_ADD_ADAPTOR_FIELD(
         RenderToStencilBuffer, std::bind(&SPointsNode::getRenderToStencilBufferCB, this, std::placeholders::_1), std::bind(&SPointsNode::setRenderToStencilBufferCB, this, std::placeholders::_1));
 
+    AV_FC_ADD_ADAPTOR_FIELD(SyncLength, std::bind(&SPointsNode::getSyncLengthCB, this, std::placeholders::_1), std::bind(&SPointsNode::setSyncLengthCB, this, std::placeholders::_1));
+
     if(guanode->get_material())
     {
         m_Material = av::Link<av::gua::Material>(new av::gua::Material(guanode->get_material()));
@@ -102,5 +104,17 @@ void av::gua::SPointsNode::setRenderToStencilBufferCB(const SFBool::SetValueEven
 {
     //  m_guaSPointsNode->set_render_to_stencil_buffer(event.getValue());
 }
+
+void av::gua::SPointsNode::getSyncLengthCB(const SFInt::GetValueEvent& event)
+{
+    *(event.getValuePtr()) = m_guaSPointsNode->sync.get_sync_length();
+}
+
+void av::gua::SPointsNode::setSyncLengthCB(const SFInt::SetValueEvent& event)
+{
+    m_guaSPointsNode->sync.set_sync_length(event.getValue());
+}
+
+
 
 std::shared_ptr<::gua::node::SPointsNode> av::gua::SPointsNode::getGuaSPointsNode() const { return m_guaSPointsNode; }
